@@ -1,12 +1,55 @@
 package net.namekdev.jepic.test;
 
 import static org.junit.Assert.*;
+import net.namekdev.jepic.DoubleExtrapolator;
 import net.namekdev.jepic.Extrapolator;
 import net.namekdev.jepic.FloatExtrapolator;
 
 import org.junit.Test;
 
 public class ExtrapolatorTests {
+	@Test
+	public void basicUsageTest() {
+		final DoubleExtrapolator i = new DoubleExtrapolator(2);
+		Double p[] = { 0.0, 0.0 };
+		Double f[];
+		
+		i.reset(0.1, 0.1, p);
+		i.readPosition(0.1, p);
+		assertTrue(p[0] == 0 && p[1] == 0);
+		assertTrue(!i.addSample(0, 1, p));
+		f = new Double[] { 1.0, 0.0 };
+		assertTrue(i.addSample(1, 1.5, f));
+		assertTrue(i.estimateLatency() < 0.5f);
+		assertTrue(i.estimateLatency() > 0.1f);
+		assertTrue(i.estimateUpdateTime() > 0.4f);
+		assertTrue(i.estimateUpdateTime() < 1.0f);
+		f = new Double[] { 2.0, 0.0 };
+		assertTrue(i.addSample(1.5, 2, f));
+		i.readPosition(2, p);
+		assertTrue(p != null);
+		assertTrue(Math.abs(2.5f - p[0]) < 0.25);
+		assertTrue(i.estimateLatency() < 0.5f);
+		assertTrue(i.estimateLatency() > 0.3f);
+		assertTrue(i.estimateUpdateTime() > 0.4f);
+		assertTrue(i.estimateUpdateTime() < 0.6f);
+		f = new Double[] { 3.0, 0.0 };
+		assertTrue(i.addSample(2, 2.5, f));
+		i.readPosition(2.5, p);
+		assertTrue(p != null);
+		assertTrue(Math.abs(4 - p[0]) < 0.125);
+		f = new Double[] { 4.0, 0.0 };
+		assertTrue(i.addSample(2.5, 3, f));
+		i.readPosition(3, p);
+		assertTrue(p != null);
+		assertTrue(Math.abs(5 - p[0]) < 0.07);
+		i.readPosition(3.25, p);
+		assertTrue(p != null);
+		assertTrue(Math.abs(5.5 - p[0]) < 0.07);
+		//  don't allow extrapolation too far forward
+		assertTrue(!i.readPosition(4, p));
+	}
+	
 	@Test
 	public void oneFloatExtrapolatorTest() {
 		final FloatExtrapolator i = new FloatExtrapolator(1);
